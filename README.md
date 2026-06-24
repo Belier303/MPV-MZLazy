@@ -3,6 +3,10 @@
 基於 [mpv-lazy (hooke007)](https://github.com/hooke007/mpv-lazy) 改造的 mpv 播放器設定包，
 採用 [ModernZ](https://github.com/Samillion/ModernZ) 作為螢幕控制列（OSC）。
 
+![預覽照片1](screenshots/預覽照片1.png)
+![預覽照片2](screenshots/預覽照片2.png)
+![播放時的無邊框畫面](screenshots/播放時的無邊框畫面.png)
+
 ## 功能特色
 
 - **yt-dlp 下載系統**：右鍵選單或工具列一鍵下載，支援 MP4/MKV 容器切換
