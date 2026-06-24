@@ -1,0 +1,102 @@
+著色器選單（F8）
+==================
+
+動態掃描 shaders/ 目錄下所有 .glsl 檔案，目前共 11 個：
+
+Adaptive_sharpen_lite_RT
+  → 適應性銳化。動態偵測邊緣強度，只對模糊處銳化，避免過度銳化產生 artifact。
+  → 僅在輸出解析度 ≥ 1.2 倍原始解析度時啟用。
+
+Ani4Kv2_ArtCNN_C4F32_i2_dx
+  → 動畫專用 AI 放大至 4K，基於卷積神經網路（Conv2D）。
+  → 適合 HD 源（720p/1080p）。
+
+AniSD_ArtCNN_C4F32_i4_dx
+  → 動畫 SD 源（480p 以下）AI 放大與修復，消除鋸齒與模糊。
+
+Anime4K_Restore_CNN_L
+  → Anime4K 線條修復（CNN 版本），改善色塊與模糊，不做放大。
+
+Anime4K_Upscale_GAN_x2_M
+  → Anime4K GAN 版本 2 倍放大，細節生成能力強，但有隨機性。
+  → 僅在輸出解析度 ≥ 1.2 倍原始解析度時啟用。
+
+nnedi3_nns64_win8x4
+  → nnedi3 神經網路邊緣導向倍高內插，畫質乾淨穩定。
+  → 僅在輸出解析度 ≥ 1.2 倍原始解析度時啟用。
+
+FSRCNNX_x2_16_0_4_1
+  → 輕量 CNN 2 倍放大，速度快、artifact 少，通用性高。
+  → 僅在輸出解析度 ≥ 1.2 倍原始解析度時啟用。
+
+QCOM_SGEDS_ms_RT
+  → Snapdragon 邊緣導向放大（GSR），保留邊緣細節。
+  → 僅在輸出解析度 ≥ 1.2 倍原始解析度時啟用。
+
+k7_modernAnime_FHD_x2
+  → ESRGAN 動畫 2 倍放大，FP16 加速，細節還原佳。
+
+k7_modernAnime_DT_FHD_x2
+  → 同為 ESRGAN，使用不同訓練資料集（DT），效果與上者略有差異。
+
+----------------------------------------------------------------
+
+VF 濾鏡選單（F10）
+==================
+
+固定 8 項，主要用於補幀與 AI 畫質增強：
+
+清空全部
+  → 移除所有 VF 濾鏡，還原原始畫面（無修改）。
+
+補幀 MVTools_快速
+  → 傳統光流法補幀，CPU 運算，速度較快，適合低配環境。
+  → 腳本：MEMC_MVT_LQ.vpy（使用 k7sfunc 套件）
+
+補幀 RIFE_DX12
+  → AI 補幀，RIFE v4+ 神經網路模型，DX12 硬體加速。
+  → 畫質與流暢度最佳，需支援 DirectML 的 GPU。
+  → 腳本：MEMC_RIFE_DML.vpy
+
+補幀 DRBA_DX12
+  → AI 補幀，DRBA 模型，DX12 硬體加速。
+  → 速度比 RIFE 稍快，品質相近。
+  → 腳本：MEMC_DRBA_DML.vpy
+
+補幀 RIFE_RTX（需 DLC-vsNV 套件）
+  → RIFE 補幀 NVIDIA TensorRT 加速版，僅 NVIDIA 顯卡可用。
+  → 腳本：MEMC_RIFE_NV.vpy（未內建，需額外安裝）
+
+補幀 DRBA_RTX（需 DLC-vsNV 套件）
+  → DRBA 補幀 NVIDIA TensorRT 加速版，僅 NVIDIA 顯卡可用。
+  → 腳本：MEMC_DRBA_NV.vpy（未內建，需額外安裝）
+
+自訂AI UAI_DX12
+  → 通用 AI 放大與畫質修復，使用 AnimeJaNai 模型。
+  → DX12 硬體加速，支援 AMD/NVIDIA。
+  → 腳本：MIX_UAI_DML.vpy
+
+自訂AI UAI_RTX（需 DLC-vsNV 套件）
+  → UAI NVIDIA TensorRT 加速版，僅 NVIDIA 顯卡可用。
+  → 腳本：MIX_UAI_NV_TRT.vpy（未內建，需額外安裝）
+
+----------------------------------------------------------------
+
+快捷鍵對照
+==========
+
+著色器：
+  Ctrl+`    清空著色器
+  Ctrl+1~0  快速切換各著色器（對應選單順序）
+  F8        開啟著色器選單
+
+VF 濾鏡：
+  ~         清空濾鏡
+  !         MVTools_快速
+  @         RIFE_DX12
+  #         DRBA_DX12
+  $         RIFE_RTX
+  %         DRBA_RTX
+  ^         UAI_DX12
+  &         UAI_RTX
+  F10       開啟 VF 濾鏡選單
