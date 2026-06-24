@@ -18,7 +18,7 @@
 
 ## 安裝方式
 
-1. 下載 [mpv-lazy 原始包](https://github.com/hooke007/mpv-lazy)（內含 mpv.exe、Python、VapourSynth 等執行環境）
+1. 下載 [mpv-lazy 原始包] (https://github.com/hooke007/mpv_PlayKit))（內含 mpv.exe、Python、VapourSynth 等執行環境）
 2. 下載 MPV-MZLazy 的 `portable_config` 資料夾
 3. 將 MPV-MZLazy 的 `portable_config` **完整覆蓋**到 mpv-lazy 根目錄下的同名資料夾
 4. 執行 `mpv.exe` 即可使用
