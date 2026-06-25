@@ -3500,9 +3500,33 @@ local function osc_init()
     ne = new_element("screenshot", "button")
     ne.content = icons.screenshot
     ne.tooltipF = locale.screenshot
-    bind_buttons("screenshot")
+
+    local function get_ss_dir()
+        local target = "~~desktop/"
+        local conf_path = mp.command_native({"expand-path", "~~/script-opts/screenshot.conf"})
+        local f = io.open(conf_path, "r")
+        if f then
+            local c = f:read("*all")
+            f:close()
+            local m = c:match("directory%s*=%s*(%S+)")
+            if m then target = m end
+        end
+        return mp.command_native({"expand-path", target})
+    end
+
     ne.eventresponder["mbtn_left_up"] = function()
         mp.command("script-message ss_video_fn")
+    end
+    ne.eventresponder["mbtn_right_up"] = function()
+        local dir = get_ss_dir()
+        mp.command_native_async({
+            name = "subprocess",
+            args = {"explorer.exe", dir},
+            detach = true,
+        }, function() end)
+    end
+    ne.eventresponder["shift+mbtn_left_down"] = function()
+        mp.command("script-binding screenshot-menu")
     end
 
     --file_loop
@@ -4581,6 +4605,24 @@ mp.register_script_message("thumbfast-info", function(json)
     else
         thumbfast = data
     end
+end)
+
+mp.register_script_message("paste_url", function()
+    mp.command_native_async({
+        name = "subprocess",
+        args = {"powershell", "-NoProfile", "-Command", "[Console]::OutputEncoding = [Text.UTF8Encoding]::UTF8; Get-Clipboard"},
+        capture_stdout = true,
+    }, function(success, result)
+        if success and result.stdout then
+            local text = result.stdout:gsub("[\r\n]", "")
+            local url = text:match("(https?://[%S]+)")
+            if url then
+                mp.commandv("loadfile", url, "replace")
+            else
+                mp.commandv("show-text", "剪貼簿中未找到網址", "-1", "1")
+            end
+        end
+    end)
 end)
 
 -- validate string type user options
