@@ -119,6 +119,7 @@ local user_opts = {
     loop_button = true,                    -- show file loop button
     shuffle_button = false,                -- show shuffle button
     speed_button = true,                   -- show speed control button
+    quality_button = true,                 -- show quality selector button
 
     buttons_always_active = "none",        -- force buttons to always be active. can add: playlist_prev, playlist_next
 
@@ -656,6 +657,9 @@ local state = {
     title_max_w = nil,
     windowtitle_max_w = nil,
     chapter_title_max_w = nil,
+    ytdl_format = "bestvideo[height<=?1080]+bestaudio/best",
+    quality_label = "1080p",
+    max_height = nil,
 }
 
 local logo_lines = {
@@ -2428,6 +2432,7 @@ layouts["default"] = function ()
     right_side_button("file_loop", 950, user_opts.loop_button)
     right_side_button("shuffle", 1050, user_opts.shuffle_button)
     right_side_button("speed", 1150, user_opts.speed_button, osc_styles.speed, 42)
+    right_side_button("quality", 1150, user_opts.quality_button, osc_styles.speed, 42)
     right_side_button("download", 1150, state.is_url and user_opts.download_button)
 
     if user_opts.cache_info then
@@ -2648,6 +2653,7 @@ layouts["compact"] = function ()
     right_side_button("playlist", 300, user_opts.playlist_button)
     right_side_button("download", 800, state.is_url and user_opts.download_button)
     right_side_button("speed", 800, user_opts.speed_button, osc_styles.speed, 42)
+    right_side_button("quality", 800, user_opts.quality_button, osc_styles.speed, 42)
 
     -- time codes
     local time_codes_width = get_time_codes_width()
@@ -2823,6 +2829,7 @@ layouts["mini"] = function ()
     right_side_button("playlist", 600, user_opts.playlist_button)
     right_side_button("download", 700, state.is_url and user_opts.download_button)
     right_side_button("speed", 700, user_opts.speed_button, osc_styles.speed, 42)
+    right_side_button("quality", 700, user_opts.quality_button, osc_styles.speed, 42)
 
     -- time codes
     local time_codes_width = get_time_codes_width()
@@ -2955,11 +2962,11 @@ layouts["modern-image"] = function ()
     end
 
     local end_x = osc_geo.w - 37
-    local function right_side_button(name, min_w, vis_extra)
+    local function right_side_button(name, min_w, vis_extra, style, w)
         elements[name].visible = (osc_param.playresx >= min_w) and (vis_extra == nil or vis_extra)
         lo = add_layout(name)
-        lo.geometry = {x = end_x, y = refY - (user_opts.osc_height / 2), an = 5, w = 24, h = 24}
-        lo.style = osc_styles.control_3
+        lo.geometry = {x = end_x, y = refY - (user_opts.osc_height / 2), an = 5, w = (w or 24), h = 24}
+        lo.style = style or osc_styles.control_3
         end_x = end_x - 45
     end
 
@@ -3002,6 +3009,7 @@ layouts["modern-image"] = function ()
     if fullscreen_button then right_side_button("fullscreen", 350) end
     if info_button then right_side_button("info", 400) end
     if ontop_button then right_side_button("ontop", 450) end
+    if user_opts.quality_button then right_side_button("quality", 500, nil, osc_styles.speed, 42) end
     if user_opts.download_button then right_side_button("download", 500, state.is_url) end
 end
 
@@ -3555,6 +3563,158 @@ local function osc_init()
     end
     bind_buttons("speed")
 
+    --quality
+    local function fetch_format_list(callback)
+        local url = mp.get_property("path") or ""
+        if url == "" or not url:match("^https?://") then
+            mp.commandv("show-text", "目前播放的不是網址影片", "-1", "1")
+            return
+        end
+        mp.commandv("show-text", "正在查詢可用格式...", "3000", "1")
+        mp.command_native_async({
+            name = "subprocess",
+            args = {"yt-dlp", "-F", "--no-warnings", "--no-playlist", url},
+            capture_stdout = true,
+        }, function(success, result)
+            if not success or not result.stdout then
+                mp.commandv("show-text", "無法取得可用格式（yt-dlp 失敗）", "-1", "1")
+                return
+            end
+            local items = {}
+            for line in result.stdout:gmatch("[^\r\n]+") do
+                if line:match("^%[") or line:match("^─") then
+                    -- skip header/separator
+                elseif line:match("^(%d+)") then
+                    local id = line:match("^(%d+)")
+                    local ext = line:match("^%d+%s+(%S+)")
+                    if not line:match("audio only") then
+                        local h = line:match("x(%d+)")
+                        if h and id and ext then
+                            local height = tonumber(h)
+                            table.insert(items, {title = string.format("%s [%s] %sp", id, ext, height), value = id, _h = height})
+                        end
+                    end
+                end
+            end
+            if #items == 0 then
+                mp.commandv("show-text", "無可用視訊格式", "4000", "1")
+                return
+            end
+            table.sort(items, function(a, b) return (a._h or 0) > (b._h or 0) end)
+            callback(items)
+        end)
+    end
+
+    local function show_quality_select()
+        local cur_fmt = mp.get_property("ytdl-format") or "bestvideo[height<=?1080]+bestaudio/best"
+        state.ytdl_format = cur_fmt
+        local label = (state.max_height and string.format("%dp", state.max_height)) or "1080p"
+        for _, p in ipairs({
+            {fmt = "bestvideo[height<=?1080]+bestaudio/best", short = "1080p"},
+            {fmt = "bestvideo+bestaudio/best", short = "最佳"},
+            {fmt = "bestvideo[height<=?720]+bestaudio/best", short = "720p"},
+            {fmt = "bestvideo[height<=?480]+bestaudio/best", short = "480p"},
+            {fmt = "bestaudio/best", short = "音訊"},
+        }) do
+            if cur_fmt == p.fmt then label = p.short; break end
+        end
+        state.quality_label = label
+        local items = {
+            "自動（上限 1080p）",
+            "最佳畫質（無上限）",
+            "1080p",
+            "720p",
+            "480p",
+            "僅音訊",
+            "────────────",
+            "檢視所有可用格式...",
+        }
+        local values = {
+            "bestvideo[height<=?1080]+bestaudio/best",
+            "bestvideo+bestaudio/best",
+            "bestvideo[height<=?1080]+bestaudio/best",
+            "bestvideo[height<=?720]+bestaudio/best",
+            "bestvideo[height<=?480]+bestaudio/best",
+            "bestaudio/best",
+            "",
+            "__list_all__",
+        }
+        local cur = mp.get_property("ytdl-format") or ""
+        local default = 0
+        for i, v in ipairs(values) do
+            if v ~= "" and v ~= "__list_all__" and v == cur then default = i; break end
+        end
+        input.select({
+            prompt = "網址影片畫質（ESC 取消）",
+            items = items,
+            default = default,
+            submit = function(idx)
+                local val = values[idx]
+                if val == "__list_all__" then
+                    fetch_format_list(function(format_items)
+                        if #format_items == 0 then return end
+                        local fmt_labels = {}
+                        local fmt_values = {}
+                        for _, fi in ipairs(format_items) do
+                            table.insert(fmt_labels, fi.title)
+                            table.insert(fmt_values, fi.value)
+                        end
+                        input.select({
+                            prompt = "選擇視訊格式（ESC 取消）",
+                            items = fmt_labels,
+                            submit = function(fid_idx)
+                                local fid = fmt_values[fid_idx]
+                                if fid and fid ~= "" then
+                                    mp.set_property("ytdl-format", fid)
+                                    state.ytdl_format = fid
+                                    mp.commandv("show-text", "已切換格式: " .. fid, "3000", "1")
+                                    request_tick()
+                                end
+                            end,
+                        })
+                    end)
+                    return
+                end
+                if val and val ~= "" then
+                    mp.set_property("ytdl-format", val)
+                    state.ytdl_format = val
+                    local short = "1080p"
+                    for _, p in ipairs({
+                        {fmt = "bestvideo[height<=?1080]+bestaudio/best", short = "1080p"},
+                        {fmt = "bestvideo+bestaudio/best", short = "最佳"},
+                        {fmt = "bestvideo[height<=?720]+bestaudio/best", short = "720p"},
+                        {fmt = "bestvideo[height<=?480]+bestaudio/best", short = "480p"},
+                        {fmt = "bestaudio/best", short = "音訊"},
+                    }) do
+                        if val == p.fmt then short = p.short; break end
+                    end
+                    state.quality_label = short
+                    request_tick()
+                end
+            end,
+        })
+    end
+
+    ne = new_element("quality", "button")
+    ne.content = function()
+        local lbl = state.quality_label or "1080p"
+        local cur = mp.get_property("ytdl-format") or ""
+        if state.max_height and (cur:find("bestvideo%[height<=%?1080%]") or cur == "bestvideo+bestaudio/best") then
+            lbl = string.format("%dp", state.max_height)
+        end
+        return lbl
+    end
+    ne.tooltipF = function()
+        local lbl = state.quality_label or "1080p"
+        local cur = mp.get_property("ytdl-format") or ""
+        if state.max_height and (cur:find("bestvideo%[height<=%?1080%]") or cur == "bestvideo+bestaudio/best") then
+            lbl = string.format("%dp", state.max_height)
+        end
+        return "畫質: " .. lbl
+    end
+    ne.eventresponder["mbtn_left_up"] = show_quality_select
+    ne.eventresponder["mbtn_right_up"] = show_quality_select
+
     --download
     ne = new_element("download", "button")
     ne.content = function () return state.downloading and icons.downloading or icons.download end
@@ -3798,6 +3958,20 @@ local function osc_init()
 
     prepare_elements()
     update_margins()
+
+    state.max_height = nil
+    local cur_fmt = mp.get_property("ytdl-format") or "bestvideo[height<=?1080]+bestaudio/best"
+    state.ytdl_format = cur_fmt
+    state.quality_label = "1080p"
+    for _, p in ipairs({
+        {fmt = "bestvideo[height<=?1080]+bestaudio/best", short = "1080p"},
+        {fmt = "bestvideo+bestaudio/best", short = "最佳"},
+        {fmt = "bestvideo[height<=?720]+bestaudio/best", short = "720p"},
+        {fmt = "bestvideo[height<=?480]+bestaudio/best", short = "480p"},
+        {fmt = "bestaudio/best", short = "音訊"},
+    }) do
+        if cur_fmt == p.fmt then state.quality_label = p.short; break end
+    end
 end
 
 local function show_wc()
@@ -4607,23 +4781,118 @@ mp.register_script_message("thumbfast-info", function(json)
     end
 end)
 
-mp.register_script_message("paste_url", function()
+local function paste_url_handler()
+    mp.commandv("update-clipboard", "text")
+    local text = mp.get_property("clipboard/text") or ""
+    local url = text:match("(https?://[%S]+)")
+    if url then
+        mp.commandv("loadfile", url, "replace")
+    else
+        mp.commandv("show-text", "剪貼簿中未找到網址", "-1", "1")
+    end
+end
+
+mp.register_script_message("paste_url", paste_url_handler)
+mp.add_key_binding("Ctrl+v", "paste_url", paste_url_handler)
+
+mp.register_script_message("quality_set", function(fmt, label)
+    mp.set_property("ytdl-format", fmt)
+    state.ytdl_format = fmt
+    state.quality_label = label or fmt
+    request_tick()
+end)
+
+mp.register_script_message("quality_list_formats", function()
+    local url = mp.get_property("path") or ""
+    if url == "" or not url:match("^https?://") then
+        mp.commandv("show-text", "目前播放的不是網址影片", "-1", "1")
+        return
+    end
+    mp.commandv("show-text", "正在查詢可用格式...", "3000", "1")
     mp.command_native_async({
         name = "subprocess",
-        args = {"powershell", "-NoProfile", "-Command", "[Console]::OutputEncoding = [Text.UTF8Encoding]::UTF8; Get-Clipboard"},
+        args = {"yt-dlp", "-F", "--no-warnings", "--no-playlist", url},
+        capture_stdout = true,
+    }, function(success, result)
+        if not success or not result.stdout then
+            mp.commandv("show-text", "無法取得可用格式（yt-dlp 失敗）", "-1", "1")
+            return
+        end
+        local items = {}
+        local values = {}
+        for line in result.stdout:gmatch("[^\r\n]+") do
+            if line:match("^%[") or line:match("^─") then
+                -- skip
+            elseif line:match("^(%d+)") then
+                local id = line:match("^(%d+)")
+                local ext = line:match("^%d+%s+(%S+)")
+                if not line:match("audio only") then
+                    local h = line:match("x(%d+)")
+                    if h and id and ext then
+                        local height = tonumber(h)
+                        table.insert(items, string.format("%s [%s] %sp", id, ext, height))
+                        table.insert(values, id)
+                    end
+                end
+            end
+        end
+        if #items == 0 then
+            mp.commandv("show-text", "無可用視訊格式", "4000", "1")
+            return
+        end
+        table.sort(items, function(a, b)
+            local ha = tonumber(a:match("(%d+)p"))
+            local hb = tonumber(b:match("(%d+)p"))
+            return (ha or 0) > (hb or 0)
+        end)
+        input.select({
+            prompt = "選擇視訊格式（ESC 取消）",
+            items = items,
+            submit = function(idx)
+                local fid = values[idx]
+                if fid and fid ~= "" then
+                    mp.set_property("ytdl-format", fid)
+                    state.ytdl_format = fid
+                    mp.commandv("show-text", "已切換格式: " .. fid, "3000", "1")
+                    request_tick()
+                end
+            end,
+        })
+    end)
+end)
+
+-- auto-detect max height for URL videos
+mp.register_script_message("query_max_height", function()
+    local url = mp.get_property("path") or ""
+    if url == "" or not url:match("^https?://") then return end
+    mp.command_native_async({
+        name = "subprocess",
+        args = {"yt-dlp", "--print", "maxheight:%(height)s", "--no-warnings", "--playlist-items", "1", url},
         capture_stdout = true,
     }, function(success, result)
         if success and result.stdout then
-            local text = result.stdout:gsub("[\r\n]", "")
-            local url = text:match("(https?://[%S]+)")
-            if url then
-                mp.commandv("loadfile", url, "replace")
-            else
-                mp.commandv("show-text", "剪貼簿中未找到網址", "-1", "1")
+            local h = tonumber(result.stdout:match("maxheight:(%d+)"))
+            if h then
+                state.max_height = h
+                request_tick()
             end
         end
     end)
 end)
+
+mp.register_script_message("on_url_loaded", function()
+    state.max_height = nil
+    mp.commandv("script-message-to", mp.get_script_name(), "query_max_height")
+end)
+
+-- hook into file-loaded to trigger URL format query
+local function on_file_loaded()
+    local path = mp.get_property("path") or ""
+    if path:match("^https?://") then
+        mp.commandv("script-message-to", mp.get_script_name(), "on_url_loaded")
+    end
+end
+mp.register_event("file-loaded", on_file_loaded)
 
 -- validate string type user options
 local function validate_user_opts()
