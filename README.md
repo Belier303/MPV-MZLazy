@@ -1,6 +1,32 @@
 # 前言
 程式基礎0的文科肥宅想用看看別人推薦的MPV播放器，所以用AI vibe coding改造，把介面改成比較喜歡的ModernZ的樣式，再微調一些我自己比較順手的使用方式，主要就是做出來自己用，所以我不會維護、不會更新，如果想要微調成自己習慣的使用操作方式，就自行拿去問AI吧!
 
+## 致謝
+
+本專案建立在以下優秀開源專案之上，感謝各位開發者的貢獻：
+
+| 貢獻者 | 專案 | 說明 |
+|--------|------|------|
+| **hooke007** | [mpv-lazy](https://github.com/hooke007/mpv-lazy) | mpv 整合包基礎 |
+| **Samillion** | [ModernZ](https://github.com/Samillion/ModernZ) | 螢幕控制列（OSC） |
+| **mpv 開發團隊** | [mpv](https://github.com/mpv-player/mpv) | 核心播放器 |
+| **yt-dlp 開發團隊** | [yt-dlp](https://github.com/yt-dlp/yt-dlp) | 網路串流下載引擎 |
+| **rossy** | [mpv-install](https://github.com/rossy/mpv-install) | 安裝工具 |
+| **igv** | FSRCNNX、KrigBilateral、SSimSuperRes、SSimDownscaler、ravu | 升頻與縮放著色器 |
+| **bloc97** | [Anime4K](https://github.com/bloc97/Anime4K) | 動畫升頻著色器 |
+| **Toriningen** | Anime4K 修改版 | 動畫升頻著色器 |
+| **Dubhater、Shiandow** | nnedi3 | 反交錯與升頻著色器 |
+| **bjin** | [acmg](https://github.com/bjin/acmg)、[dctk](https://github.com/bjin/dctk) | 色域轉換著色器 |
+| **haasn** | [libplacebo](https://github.com/haasn/libplacebo) 參考實作 | 色彩管理 |
+| **Kyokai-Project** | [DLC-vsNV](https://github.com/Kyokai-Project/DLC-vsNV) | RTX 補幀模型 |
+| **VapourSynth 開發團隊** | [VapourSynth](https://github.com/vapoursynth/vapoursynth) | 補幀與濾鏡框架 |
+| **mv-tools 開發者** | MVTools | 光流補幀 |
+| **WolframRhodium** | [RIFE](https://github.com/WolframRhodium/RIFE-ncnn-Vulkan) | AI 補幀 |
+| **wxWidgets 開發團隊** | [wxWidgets](https://www.wxwidgets.org/) | Python 安裝包用 UI 框架 |
+| **各 Lua 腳本原作者** | 詳見各 .lua 檔案內部授權 | 播放清單、字幕選單、截圖命名等功能 |
+
+> 若有遺漏，請見 LICENSE.md 與各檔案內部的完整授權聲明。
+
 # MPV-MZLazy
 
 基於 [mpv-lazy (hooke007)](https://github.com/hooke007/mpv-lazy) 改造的 mpv 播放器設定包，
