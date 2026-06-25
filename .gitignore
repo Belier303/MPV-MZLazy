@@ -1,0 +1,35 @@
+# 個人設定（含下載路徑等隱私資訊）
+ytdl_download.conf
+portable_config/ytdl_download.conf
+
+# Windows 系統檔案
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# Python 快取
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 編輯器個人設定
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 安裝檔（非專案本體，可自行下載）
+installer/
+
+# 使用說明 PDF（非原始碼，檔案過大）
+mpv_manual.pdf
+
+# 手動下載的安裝腳本
+get-pip.py
+pfm-192-vapoursynth-win.exe
+
+# 使用者設定快取（含本機絕對路徑與播放歷史）
+portable_config/saved-props.json
+portable_config/_cache/
