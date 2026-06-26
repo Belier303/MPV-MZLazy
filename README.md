@@ -262,7 +262,6 @@ portable_config/
 - 音量 `-` `+` 按鍵改為 modernz OSC 橘色閃爍回饋（關閉 mpv 內建 OSD）
 - 速度 `[` `]` 按鍵改為 `no-osd` 前綴，OSC 按鈕閃爍顯示當前數值
 - 工具列音軌按鈕左鍵改為 `input.select` 選單（可新增外部音軌）
-- 新增 F5 下載快捷鍵綁定
 - 工具列新增下載按鈕、下載資料夾按鈕
 - input_plus.lua 新增設定檔編輯功能（`script-message edit`）
 - 截圖按鈕：右鍵改為開啟截圖資料夾、中鍵（滾輪鍵）開啟截圖設定選單
