@@ -34,6 +34,7 @@
 
 ![預覽照片1](screenshots/預覽照片1.png)
 ![預覽照片2](screenshots/預覽照片2.png)
+![預覽照片1](screenshots/預覽照片3.png)
 ![播放時的無邊框畫面](screenshots/播放時的無邊框畫面.png)
 ![播放清單選單](screenshots/播放清單選單.png)
 ![截圖設定選單](screenshots/截圖設定選單.png)
